@@ -50,21 +50,6 @@ Example structure:
 }
 ```
 
-### Guardrails
-
-The implementation includes the required guardrails where applicable:
-
-* **Step limit** — limits the number of model hops allowed per branch.
-* **Timeout** — model calls have a configured timeout.
-* **Retry** — transient failures use capped retries with exponential jitter.
-* **Token budget** — oversized input is rejected before reaching the model.
-* **Input validation** — empty or invalid input is rejected.
-* **Output validation** — model output is validated before being returned.
-* **Output token limit** — model responses have a configured maximum token count.
-* **Secret hygiene** — API keys and model configuration are loaded from environment variables.
-
-Shared guardrail logic is kept in `guardrails.py` to avoid duplicating the same logic across tasks.
-
 ### Run Task 1
 
 ```bash
@@ -577,5 +562,24 @@ Model configuration and API credentials are loaded from `.env`.
 Example `.env.example`:
 
 No API keys or secrets are stored directly in the source code.
+
+---
+
+
+### Guardrails
+
+The implementation includes the required guardrails where applicable:
+
+* **Step limit** — limits the number of model hops allowed per branch.
+* **Timeout** — model calls have a configured timeout.
+* **Retry** — transient failures use capped retries with exponential jitter.
+* **Token budget** — oversized input is rejected before reaching the model.
+* **Input validation** — empty or invalid input is rejected.
+* **Output validation** — model output is validated before being returned.
+* **Output token limit** — model responses have a configured maximum token count.
+* **Secret hygiene** — API keys and model configuration are loaded from environment variables.
+
+Shared guardrail logic is kept in `guardrails.py` to avoid duplicating the same logic across tasks.
+
 
 
