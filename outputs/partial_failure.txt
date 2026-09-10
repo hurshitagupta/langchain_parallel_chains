@@ -1,0 +1,12 @@
+
+PARTIAL FAILURE RESULT
+
+## SUMMARY
+Parallel chains run independent tasks concurrently.  
+A failed branch doesn’t affect the remaining usable branches.
+
+## KEYWORDS
+parallel, chains, independent, tasks, branches
+
+## RISKS
+<risks unavailable>

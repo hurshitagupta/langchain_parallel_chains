@@ -242,3 +242,117 @@ Example `.env.example`:
 
 No API keys or secrets are stored directly in the source code.
 
+---
+
+## Task 3 — Partial Failure
+
+Task 3 demonstrates how a parallel chain can continue returning useful results even when one independent branch fails.
+
+For this task, the `summary` and `keywords` branches execute normally, while the `risks` branch is deliberately made to fail.
+
+```python
+def failing_risks_branch(data: dict) -> str:
+    raise ValueError("Risks branch failed")
+```
+
+### Handling the Failed Branch
+
+The failing branch uses LangChain's `.with_fallbacks()`:
+
+```python
+failed_risks_chain = RunnableLambda(
+    failing_risks_branch
+).with_fallbacks(
+    [RunnableLambda(risks_fallback)]
+)
+```
+
+If the risks branch fails, its fallback returns an explicit gap marker:
+
+```text
+<risks unavailable>
+```
+
+This allows the other successful branch outputs to remain available instead of failing the complete parallel chain.
+
+The three branches are executed using:
+
+```python
+fan_out_with_failure = RunnableParallel(
+    summary=summary_chain,
+    keywords=keywords_chain,
+    risks=failed_risks_chain,
+)
+```
+
+The resulting structure is therefore similar to:
+
+```text
+summary  → successful result
+keywords → successful result
+risks    → failure → fallback → <risks unavailable>
+```
+
+### Fan-in and Merge
+
+After the parallel execution finishes, the branch outputs are passed to `merge_results()`.
+
+The reducer keeps the final output in the fixed order:
+
+```text
+summary → keywords → risks
+```
+
+It also provides an unavailable marker if a branch result is missing.
+
+The complete chain performs both fan-out and fan-in:
+
+```python
+partial_failure_chain = (
+    fan_out_with_failure | RunnableLambda(merge_results)
+)
+```
+
+### Automated Tests
+
+Task 3 includes a success case and a failure-path test.
+
+The success test deliberately triggers the risks branch failure and verifies that:
+
+* the final merged result is still returned;
+* summary is present;
+* keywords are present;
+* risks is present;
+* the `<risks unavailable>` gap marker is included.
+
+The second test passes incomplete branch data to the merge function and verifies that a missing result is handled using the explicit gap marker instead of raising an error.
+
+### Run Task 3
+
+```bash
+uv run python -m partial_failure.partial_failure
+```
+
+Save the output:
+
+```bash
+uv run python -m partial_failure.partial_failure > outputs/partial_failure.txt
+```
+
+### Run Task 3 Tests
+
+```bash
+uv run pytest tests/test_partial_failure.py -v
+```
+
+Save the test output:
+
+```bash
+uv run pytest tests/test_partial_failure.py -v > outputs/test_partial_failure.txt
+```
+
+### Task 3 Result
+
+Task 3 demonstrates graceful partial failure within `RunnableParallel`. A deliberately failing branch is recovered using `.with_fallbacks()`, an explicit `<risks unavailable>` marker represents the missing result, and the successful branch outputs are still merged and returned.
+
+
