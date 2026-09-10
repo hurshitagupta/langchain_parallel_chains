@@ -1,0 +1,45 @@
+Run 1/10
+Sequential: 15.76s
+Parallel:   6.56s
+
+Run 2/10
+Sequential: 28.46s
+Parallel:   7.27s
+
+Run 3/10
+Sequential: 17.42s
+Parallel:   5.73s
+
+Run 4/10
+Sequential: 10.74s
+Parallel:   14.44s
+
+Run 5/10
+Sequential: 11.07s
+Parallel:   7.46s
+
+Run 6/10
+Sequential: 12.80s
+Parallel:   4.61s
+
+Run 7/10
+Sequential: 18.33s
+Parallel:   9.01s
+
+Run 8/10
+Sequential: 13.21s
+Parallel:   7.48s
+
+Run 9/10
+Sequential: 21.20s
+Parallel:   11.57s
+
+Run 10/10
+Sequential: 16.28s
+Parallel:   8.50s
+
+=== SPEEDUP SUMMARY ===
+Runs: 10
+Average sequential time: 16.53s
+Average parallel time:   8.26s
+Speedup: 2.00x

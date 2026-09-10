@@ -50,42 +50,34 @@ Example structure:
 }
 ```
 
-## Guardrails
+### Guardrails
 
-The implementation includes the required guardrails where applicable.
+The implementation includes the required guardrails where applicable:
 
 * **Step limit** — limits the number of model hops allowed per branch.
-* **Timeout** — model calls have a configured timeout to prevent requests from hanging indefinitely.
-* **Retry** — transient model failures use capped retries with exponential jitter.
-* **Token budget** — oversized input is rejected before being sent to the model.
+* **Timeout** — model calls have a configured timeout.
+* **Retry** — transient failures use capped retries with exponential jitter.
+* **Token budget** — oversized input is rejected before reaching the model.
 * **Input validation** — empty or invalid input is rejected.
-* **Output validation** — model output is checked before being returned.
+* **Output validation** — model output is validated before being returned.
 * **Output token limit** — model responses have a configured maximum token count.
-* **Secret hygiene** — API keys and model configuration are loaded from environment variables and are not stored directly in source code.
+* **Secret hygiene** — API keys and model configuration are loaded from environment variables.
 
-Shared validation and guardrail logic is kept in `guardrails.py` to avoid duplicating the same logic across assessment tasks.
+Shared guardrail logic is kept in `guardrails.py` to avoid duplicating the same logic across tasks.
 
-## Environment Variables
-
-Model configuration and API credentials are loaded from a `.env` file.
-
-## Run Task 1
-
-Run the fan-out implementation from the project root:
+### Run Task 1
 
 ```bash
 uv run python -m fan_out.fan_out
 ```
 
-Save the output as evidence:
+Save the output:
 
 ```bash
 uv run python -m fan_out.fan_out > outputs/fan_out.txt
 ```
 
-## Run Tests
-
-Run the Task 1 automated tests:
+### Run Task 1 Tests
 
 ```bash
 uv run pytest tests/test_fan_out.py -v
@@ -97,13 +89,156 @@ Save the test output:
 uv run pytest tests/test_fan_out.py -v > outputs/test_fan_out.txt
 ```
 
-The tests cover:
+The tests cover a successful three-branch fan-out and rejection of invalid empty input.
 
-* **Success case** — verifies that the `summary`, `keywords`, and `risks` branches all return non-empty results.
-* **Failure case** — verifies that invalid empty input is rejected before reaching the model.
+---
 
-## Task 1 Result
+## Task 2 — Speedup Evidence
 
-Task 1 demonstrates a working fan-out pipeline using LangChain's `RunnableParallel`.
+Task 2 compares the wall-clock execution time of the same three operations when executed sequentially and in parallel.
 
-The same input is distributed to three independent LLM branches, and the outputs are collected into a single structured dictionary. Input/output validation, token limits, retries, timeout configuration, step limiting, and environment-based secret management are also included around the parallel pipeline.
+The comparison uses the same `summary`, `keywords`, and `risks` chains created in Task 1 so that both approaches perform equivalent work.
+
+### Sequential Execution
+
+The sequential implementation invokes each branch one after another:
+
+```python
+def run_sequential(data: dict) -> dict:
+    return {
+        "summary": summary_chain.invoke(data),
+        "keywords": keywords_chain.invoke(data),
+        "risks": risks_chain.invoke(data),
+    }
+```
+
+Each branch must finish before the next branch starts.
+
+### Parallel Execution
+
+The parallel implementation uses the `RunnableParallel` chain created in Task 1:
+
+```python
+def run_parallel(data: dict) -> dict:
+    return fan_out_chain.invoke(data)
+```
+
+Since the three branches are independent, their execution can overlap instead of waiting for each other sequentially.
+
+### Measurement
+
+Both execution methods are measured over **10 runs**.
+
+```python
+RUNS = 10
+```
+
+Wall-clock time is measured using:
+
+```python
+time.perf_counter()
+```
+
+For every run, the script records both:
+
+```text
+Sequential execution time
+Parallel execution time
+```
+
+After all 10 runs, average execution times are calculated:
+
+```python
+avg_sequential = sum(sequential_times) / runs
+avg_parallel = sum(parallel_times) / runs
+```
+
+The measured speedup is calculated as:
+
+```python
+speedup = avg_sequential / avg_parallel
+```
+
+This provides numerical evidence of the difference between sequential and parallel execution rather than assuming that parallel execution is faster.
+
+### Example Output
+
+The script produces output in the following format:
+
+```text
+Run 1/10
+Sequential: ...
+Parallel:   ...
+
+Run 2/10
+Sequential: ...
+Parallel:   ...
+
+...
+
+Run 10/10
+Sequential: ...
+Parallel:   ...
+
+=== SPEEDUP SUMMARY ===
+Runs: 10
+Average sequential time: ...
+Average parallel time:   ...
+Speedup: ...x
+```
+
+The actual measured results are saved in:
+
+```text
+outputs/speedup_evidence.txt
+```
+
+### Automated Tests
+
+Task 2 contains both a success and failure test.
+
+The success test verifies that:
+
+* the requested number of benchmark runs is completed;
+* sequential timings are collected;
+* parallel timings are collected;
+* average timing values are produced.
+
+The execution functions are monkeypatched during the unit test so that running the test suite does not perform the full real-model benchmark again.
+
+The failure test verifies that an invalid run count such as `0` is rejected.
+
+### Run Task 2
+
+```bash
+uv run python -m speedup_evidence.speedup_evidence
+```
+
+Save the benchmark evidence:
+
+```bash
+uv run python -m speedup_evidence.speedup_evidence > outputs/speedup_evidence.txt
+```
+
+### Run Task 2 Tests
+
+```bash
+uv run pytest tests/test_speedup_evidence.py -v
+```
+
+Save the test output:
+
+```bash
+uv run pytest tests/test_speedup_evidence.py -v > outputs/test_speedup_evidence.txt
+```
+
+---
+
+## Environment Variables
+
+Model configuration and API credentials are loaded from `.env`.
+
+Example `.env.example`:
+
+No API keys or secrets are stored directly in the source code.
+
