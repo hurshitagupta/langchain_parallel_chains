@@ -355,4 +355,105 @@ uv run pytest tests/test_partial_failure.py -v > outputs/test_partial_failure.tx
 
 Task 3 demonstrates graceful partial failure within `RunnableParallel`. A deliberately failing branch is recovered using `.with_fallbacks()`, an explicit `<risks unavailable>` marker represents the missing result, and the successful branch outputs are still merged and returned.
 
+---
+
+## Task 4 — Merge Logic
+
+Task 4 implements a reducer that resolves conflicts between parallel branch outputs instead of simply concatenating the results.
+
+For this task, three independent branches are executed using `RunnableParallel`.
+
+The branches return:
+
+```text id="dnn90q"
+branch_one   → HIGH
+branch_two   → LOW
+branch_three → LOW
+```
+
+These branch outputs are **intentionally deterministic** for this task. The purpose of Task 4 is to demonstrate and test the conflict-resolution behaviour of the reducer. Using fixed branch outputs makes the conflict reproducible across runs instead of depending on potentially variable model responses.
+
+The previous tasks already demonstrate parallel execution using actual model chains.
+
+### Conflict Resolution
+
+After the parallel branches complete, their results are passed to `merge_results()`.
+
+```python id="1qkgxv"
+def merge_results(data):
+    if not data:
+        raise ValueError("No branch outputs provided")
+
+    values = list(data.values())
+
+    if "HIGH" in values:
+        return "HIGH"
+
+    return "LOW"
+```
+
+The conflict-resolution rule is intentionally simple:
+
+> If any branch reports `HIGH`, the final merged result is `HIGH`. Otherwise, the result is `LOW`.
+
+For example:
+
+```text id="g7c6a3"
+HIGH + LOW + LOW
+        ↓
+     Reducer
+        ↓
+       HIGH
+```
+
+This is a real merge strategy because the reducer evaluates the branch outputs and produces one resolved result rather than joining the three strings together.
+
+The complete fan-out/fan-in chain is:
+
+```python id="g3k2vl"
+merge_chain = ( parallel_chain | RunnableLambda(merge_results))
+```
+
+### Automated Tests
+
+Task 4 includes tests for the reducer behaviour.
+
+The tests verify:
+
+* conflicting outputs containing `HIGH` resolve to `HIGH`;
+* all `LOW` outputs resolve to `LOW`;
+* empty branch output raises a `ValueError`.
+
+This provides deterministic evidence that the reducer follows the defined conflict-resolution rule.
+
+### Run Task 4
+
+```bash id="xt5fsf"
+uv run python -m merge_logic.merge_logic
+```
+
+Save the output:
+
+```bash id="5j45ui"
+uv run python -m merge_logic.merge_logic > outputs/merge_logic.txt
+```
+
+### Run Task 4 Tests
+
+```bash id="sf00y1"
+uv run pytest tests/test_merge_logic.py -v
+```
+
+Save the test output:
+
+```bash id="39uzoh"
+uv run pytest tests/test_merge_logic.py -v > outputs/test_merge_logic.txt
+```
+
+### Task 4 Result
+
+Task 4 demonstrates conflict resolution during the fan-in stage of a parallel chain. Three deterministic parallel branches intentionally produce conflicting `HIGH` and `LOW` values, and the reducer applies a defined rule to produce one final result.
+
+The deterministic outputs are used specifically to make the merge behaviour reproducible and easy to verify, while actual LLM-based parallel execution is demonstrated in the earlier tasks.
+
 
