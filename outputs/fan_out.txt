@@ -1,0 +1,15 @@
+PARALLEL RESULT
+
+SUMMARY:
+LangChain’s RunnableParallel lets an app broadcast one input to several independent branches.  
+All branches run concurrently and their outputs are returned together.
+
+KEYWORDS:
+LangChain, RunnableParallel, input, branches, concurrently
+
+RISKS:
+**Possible risks**
+
+1. **Resource exhaustion / performance overload** – Sending the same input to many parallel branches can quickly consume CPU, memory, network I/O, or external‑service quotas. If the number of branches or the size of the workload is not carefully bounded, the system may become throttled, time‑out, or crash.
+
+2. **Inconsistent or conflicting results** – Because the branches run concurrently and may access shared state (e.g., a database, mutable cache, or external API), race conditions or non‑deterministic ordering can produce contradictory outputs, duplicated side‑effects, or data corruption.
