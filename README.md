@@ -234,16 +234,6 @@ uv run pytest tests/test_speedup_evidence.py -v > outputs/test_speedup_evidence.
 
 ---
 
-## Environment Variables
-
-Model configuration and API credentials are loaded from `.env`.
-
-Example `.env.example`:
-
-No API keys or secrets are stored directly in the source code.
-
----
-
 ## Task 3 — Partial Failure
 
 Task 3 demonstrates how a parallel chain can continue returning useful results even when one independent branch fails.
@@ -455,5 +445,137 @@ uv run pytest tests/test_merge_logic.py -v > outputs/test_merge_logic.txt
 Task 4 demonstrates conflict resolution during the fan-in stage of a parallel chain. Three deterministic parallel branches intentionally produce conflicting `HIGH` and `LOW` values, and the reducer applies a defined rule to produce one final result.
 
 The deterministic outputs are used specifically to make the merge behaviour reproducible and easy to verify, while actual LLM-based parallel execution is demonstrated in the earlier tasks.
+
+---
+
+## Task 5 — Determinism
+
+Task 5 proves that the output ordering of the parallel chain remains stable across repeated runs.
+
+For this task, three independent branches are executed using `RunnableParallel`:
+
+```python id="i8ggin"
+parallel_chain = RunnableParallel(
+    summary=RunnableLambda(summary_branch),
+    keywords=RunnableLambda(keywords_branch),
+    risks=RunnableLambda(risks_branch),
+)
+```
+
+The expected output order is defined as:
+
+```python id="rqvjhu"
+EXPECTED_ORDER = [
+    "summary",
+    "keywords",
+    "risks",
+]
+```
+
+### Deterministic Branches
+
+The branch outputs are intentionally deterministic for this task.
+
+```text id="gxjtz7"
+summary  → Summary result
+keywords → Keywords result
+risks    → Risks result
+```
+
+The purpose of Task 5 is specifically to verify **stable output ordering**, not model response quality or variation. Using deterministic branches isolates the behaviour being tested and makes the result reproducible without depending on external model responses.
+
+Actual model-based parallel execution has already been demonstrated in Tasks 1–3.
+
+### Repeated Execution
+
+The parallel chain is executed **10 times**:
+
+```python id="tbsl4h"
+RUNS = 10
+```
+
+After each execution, the returned dictionary key order is captured:
+
+```python id="7i0pd4"
+order = list(result.keys())
+```
+
+Each observed order is then compared against:
+
+```text id="4l1pv8"
+summary → keywords → risks
+```
+
+The final stability check verifies that every run produced exactly the same ordering.
+If all runs match, the script reports that the output ordering remained stable.
+
+### Output Evidence
+
+The script produces output in the following format:
+
+```text id="i5yrra"
+Run 1: ['summary', 'keywords', 'risks']
+...
+Run 10: ['summary', 'keywords', 'risks']
+
+DETERMINISM RESULT
+Output ordering was stable across all runs.
+```
+
+This provides direct evidence that the parallel execution does not change the expected result ordering between runs.
+
+### Automated Tests
+
+Task 5 includes automated tests covering:
+
+* the returned dictionary follows the expected `summary`, `keywords`, `risks` order;
+* ordering remains stable across repeated executions;
+* an invalid run count such as `0` raises a `ValueError`.
+
+### Run Task 5
+
+```bash id="2rx9h3"
+uv run python -m determinism.determinism
+```
+
+Save the output:
+
+```bash id="3t7b4r"
+uv run python -m determinism.determinism > outputs/determinism.txt
+```
+
+### Run Task 5 Tests
+
+```bash id="k9i8kz"
+uv run pytest tests/test_determinism.py -v
+```
+
+Save the test output:
+
+```bash id="w6n4ar"
+uv run pytest tests/test_determinism.py -v > outputs/test_determinism.txt
+```
+
+### Task 5 Result
+
+Task 5 demonstrates deterministic output ordering across repeated `RunnableParallel` executions. The parallel chain was executed 10 times and each run preserved the defined:
+
+```text id="7lks2f"
+summary → keywords → risks
+```
+
+ordering.
+
+Deterministic branch outputs were intentionally used so that the test focuses specifically on ordering and remains reproducible across executions.
+
+---
+
+## Environment Variables
+
+Model configuration and API credentials are loaded from `.env`.
+
+Example `.env.example`:
+
+No API keys or secrets are stored directly in the source code.
 
 

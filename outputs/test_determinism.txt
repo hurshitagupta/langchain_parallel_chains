@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Hurshita Gupta\OneDrive\Desktop\langchain_parallel_chains\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Hurshita Gupta\OneDrive\Desktop\langchain_parallel_chains
+configfile: pyproject.toml
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+tests/test_determinism.py::test_output_order PASSED                      [ 33%]
+tests/test_determinism.py::test_determinism_across_runs PASSED           [ 66%]
+tests/test_determinism.py::test_invalid_runs PASSED                      [100%]
+
+============================== 3 passed in 0.41s ==============================
